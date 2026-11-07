@@ -1573,1642 +1573,495 @@ end
 
 local CKOhubxKillAllInstance = CKOhubxKillAll.new()
 
-local function LoadHub()
-    local oldGui = PlayerGui:FindFirstChild("CKOhubx")
-    if oldGui then oldGui:Destroy() end
 
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "CKOhubx"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = PlayerGui
 
-    local Theme = {
-        Bg      = Color3.fromRGB(8, 12, 22),
-        Panel   = Color3.fromRGB(12, 18, 32),
-        Card    = Color3.fromRGB(16, 24, 44),
-        Line    = Color3.fromRGB(34, 52, 90),
-        Accent    = Color3.fromRGB(80, 150, 255),
-        AccentDim = Color3.fromRGB(44, 88, 165),
-        Text    = Color3.fromRGB(226, 233, 246),
-        Dim     = Color3.fromRGB(125, 139, 168),
-        Off     = Color3.fromRGB(24, 34, 58),
-        Green   = Color3.fromRGB(110, 190, 120),
-        Orange  = Color3.fromRGB(214, 140, 70),
-        Red     = Color3.fromRGB(200, 70, 80),
-        Link    = Color3.fromRGB(120, 175, 255),
-    }
-    local FONT_TITLE = Enum.Font.Garamond
-    local FONT       = Enum.Font.GothamMedium
-    local FONT_BOLD  = Enum.Font.GothamBold
+-- CKOhubx (WindUI)
+-- Script creado por el guapo de Chris y Oli
+-- Compatible Delta
 
-    local DISCORD_URL = "https://discord.gg/mWBffStfJ"
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local SoundService = game:GetService("SoundService")
 
-    local function make(class, props, parent)
-        local o = Instance.new(class)
-        if class == "TextLabel" or class == "TextButton" or class == "TextBox" then o.AutoLocalize = false end
-        for k, v in pairs(props) do o[k] = v end
-        if parent then o.Parent = parent end
-        return o
-    end
-    local function corner(o, r)
-        return make("UICorner", {CornerRadius = UDim.new(0, r)}, o)
-    end
-    local function stroke(o, color, thickness, transparency)
-        return make("UIStroke", {
-            Color = color, Thickness = thickness or 1, Transparency = transparency or 0,
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        }, o)
-    end
-    local function line(parent, props, mode, rotation)
-        props.BorderSizePixel = 0
-        local l = make("Frame", props, parent)
-        local keys
-        if mode == "center" then
-            keys = {NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1)}
-        else
-            keys = {NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)}
-        end
-        make("UIGradient", {Transparency = NumberSequence.new(keys), Rotation = rotation or 0}, l)
-        return l
-    end
-    local function diamond(parent, x, y, size, color)
-        return make("Frame", {
-            Size = UDim2.new(0, size, 0, size), Position = UDim2.new(x[1], x[2], y[1], y[2]),
-            BackgroundColor3 = color or Theme.Accent, BorderSizePixel = 0, Rotation = 45, ZIndex = 4,
-        }, parent)
-    end
-    local function nextOrder(parent)
-        local n = (parent:GetAttribute("_n") or 0) + 1
-        parent:SetAttribute("_n", n)
-        return n
-    end
-
-    local MainButton = make("ImageButton", {
-        Name = "MainButton", Size = UDim2.new(0, 46, 0, 46), Position = UDim2.new(0.5, -23, 0, 12),
-        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Image = "rbxassetid://76111147434526",
-        ScaleType = Enum.ScaleType.Fit, Active = true, Draggable = true,
-    }, ScreenGui)
-    corner(MainButton, 8)
-    stroke(MainButton, Theme.AccentDim, 1, 0.1)
-    make("UIPadding", {
-        PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6),
-        PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6),
-    }, MainButton)
-
-    local cam = workspace.CurrentCamera
-    local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
-    local baseScale = math.clamp(math.min((vp.X - 24) / 600, (vp.Y - 90) / 410), 0.5, 1)
-
-    local MainFrame = make("Frame", {
-        Name = "MainFrame", Size = UDim2.new(0, 600, 0, 410), AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 18), BackgroundColor3 = Theme.Bg, BorderSizePixel = 0,
-        Visible = false, Active = true, Draggable = true, ClipsDescendants = true,
-    }, ScreenGui)
-    corner(MainFrame, 6)
-    stroke(MainFrame, Theme.AccentDim, 1, 0.35)
-    local uiScale = make("UIScale", {Scale = baseScale}, MainFrame)
-
-    local Backdrop = make("ImageLabel", {
-        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = "rbxassetid://120887660443421",
-        ScaleType = Enum.ScaleType.Crop, ImageTransparency = 0.35, ImageColor3 = Color3.fromRGB(150, 170, 225), ZIndex = 0,
-    }, MainFrame)
-    corner(Backdrop, 6)
-
-    local Header = make("Frame", {
-        Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.35,
-        BorderSizePixel = 0, ZIndex = 3,
-    }, MainFrame)
-    make("ImageLabel", {
-        Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(0, 16, 0, 12), BackgroundTransparency = 1,
-        Image = "rbxassetid://76111147434526", ScaleType = Enum.ScaleType.Fit, ZIndex = 4,
-    }, Header)
-    make("TextLabel", {
-        Size = UDim2.new(1, -120, 0, 28), Position = UDim2.new(0, 60, 0, 6), BackgroundTransparency = 1,
-        Text = "SHERIFF VS ASESINOS [DUELS]", Font = FONT_TITLE, TextSize = 23, TextTruncate = Enum.TextTruncate.AtEnd, TextColor3 = Theme.Text,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4,
-    }, Header)
-    make("TextLabel", {
-        Size = UDim2.new(1, -120, 0, 14), Position = UDim2.new(0, 60, 0, 34), BackgroundTransparency = 1,
-        Text = "F R E E   B E T A   Â·   B Y   0 1 R O X H U B ,   N E X V Y R H U B",
-        Font = FONT, TextSize = 9, TextTruncate = Enum.TextTruncate.AtEnd, TextColor3 = Theme.AccentDim,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4,
-    }, Header)
-
-    local CloseBtn = make("TextButton", {
-        Size = UDim2.new(0, 28, 0, 28), Position = UDim2.new(1, -42, 0, 14), BackgroundColor3 = Theme.Card,
-        BackgroundTransparency = 0.2, Text = "", AutoButtonColor = false, ZIndex = 5,
-    }, Header)
-    corner(CloseBtn, 6)
-    local closeStroke = stroke(CloseBtn, Theme.Line, 1, 0.1)
-    local closeBars = {}
-    for _, rot in ipairs({45, -45}) do
-        local bar = make("Frame", {
-            Size = UDim2.new(0, 12, 0, 2), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
-            Rotation = rot, BackgroundColor3 = Theme.Dim, BorderSizePixel = 0, ZIndex = 6,
-        }, CloseBtn)
-        corner(bar, 1)
-        closeBars[#closeBars + 1] = bar
-    end
-    local function closeHover(on)
-        local info = TweenInfo.new(0.15)
-        TweenService:Create(CloseBtn, info, {
-            BackgroundColor3 = on and Theme.Red or Theme.Card, BackgroundTransparency = on and 0.1 or 0.2,
-        }):Play()
-        TweenService:Create(closeStroke, info, {Color = on and Theme.Red or Theme.Line}):Play()
-        for _, b in ipairs(closeBars) do
-            TweenService:Create(b, info, {BackgroundColor3 = on and Theme.Text or Theme.Dim}):Play()
+local WindUI
+local ok, result = pcall(function()
+    local _version = "1.6.45"
+    local uiFileName = "WindUI_CKOhubx.lua"
+    local timeFileName = "WindUI_CKOhubx_time.txt"
+    local cacheValido = false
+    if isfile and isfile(timeFileName) and isfile(uiFileName) then
+        local t = tonumber(readfile(timeFileName))
+        if t and (os.time() - t) < 86400 then
+            cacheValido = true
         end
     end
-    CloseBtn.MouseEnter:Connect(function() closeHover(true) end)
-    CloseBtn.MouseLeave:Connect(function() closeHover(false) end)
-
-    line(MainFrame, {
-        Size = UDim2.new(1, -40, 0, 1), Position = UDim2.new(0, 20, 0, 58),
-        BackgroundColor3 = Theme.Accent, ZIndex = 3,
-    }, "center")
-    diamond(MainFrame, {0.5, -3}, {0, 55}, 7)
-
-    local SIDE_W, TOP_H, FOOT_H = 168, 62, 12
-    local SEARCH_H = 38
-    make("Frame", {
-        Size = UDim2.new(0, SIDE_W, 1, -(TOP_H + FOOT_H)), Position = UDim2.new(0, 0, 0, TOP_H),
-        BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.4, BorderSizePixel = 0, ZIndex = 1,
-    }, MainFrame)
-    local Side = make("ScrollingFrame", {
-        Position = UDim2.new(0, 0, 0, TOP_H + SEARCH_H), Size = UDim2.new(0, SIDE_W, 1, -(TOP_H + SEARCH_H + FOOT_H)),
-        BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 0,
-        CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 2,
-    }, MainFrame)
-    make("UIListLayout", {
-        Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-    }, Side)
-    make("UIPadding", {PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 8)}, Side)
-
-    local SearchFrame = make("Frame", {
-        Size = UDim2.new(0, SIDE_W - 24, 0, 28), Position = UDim2.new(0, 12, 0, TOP_H + 6),
-        BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.2, BorderSizePixel = 0, ZIndex = 3,
-    }, MainFrame)
-    corner(SearchFrame, 6)
-    local searchStroke = stroke(SearchFrame, Theme.Line, 1, 0.1)
-    local lens = make("Frame", {
-        Size = UDim2.new(0, 9, 0, 9), Position = UDim2.new(0, 10, 0, 8), BackgroundTransparency = 1, ZIndex = 4,
-    }, SearchFrame)
-    corner(lens, 5)
-    stroke(lens, Theme.Dim, 1.5, 0)
-    make("Frame", {
-        Size = UDim2.new(0, 5, 0, 2), Position = UDim2.new(0, 18, 0, 17), Rotation = 45,
-        BackgroundColor3 = Theme.Dim, BorderSizePixel = 0, ZIndex = 4,
-    }, SearchFrame)
-    local SearchBox = make("TextBox", {
-        Size = UDim2.new(1, -38, 1, 0), Position = UDim2.new(0, 32, 0, 0), BackgroundTransparency = 1,
-        Text = "", PlaceholderText = "Search", PlaceholderColor3 = Theme.Dim, TextColor3 = Theme.Text,
-        Font = FONT, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, ZIndex = 4,
-    }, SearchFrame)
-    SearchBox.Focused:Connect(function()
-        TweenService:Create(searchStroke, TweenInfo.new(0.15), {Color = Theme.Accent}):Play()
-    end)
-    SearchBox.FocusLost:Connect(function()
-        TweenService:Create(searchStroke, TweenInfo.new(0.15), {Color = Theme.Line}):Play()
-    end)
-
-    line(MainFrame, {
-        Size = UDim2.new(0, 1, 1, -(TOP_H + FOOT_H + 16)), Position = UDim2.new(0, SIDE_W, 0, TOP_H + 8),
-        BackgroundColor3 = Theme.Line, ZIndex = 2,
-    }, "center", 90)
-
-    local Content = make("Frame", {
-        Position = UDim2.new(0, SIDE_W + 1, 0, TOP_H), Size = UDim2.new(1, -(SIDE_W + 1), 1, -(TOP_H + FOOT_H)),
-        BackgroundColor3 = Theme.Panel, BackgroundTransparency = 0.85, BorderSizePixel = 0,
-        ClipsDescendants = true, ZIndex = 1,
-    }, MainFrame)
-
-    local panels = {}
-    local searchIndex = {}
-    local function NewPanel(name)
-        local p = make("ScrollingFrame", {
-            Name = name, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
-            ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.AccentDim, ScrollBarImageTransparency = 0.3,
-            CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false,
-        }, Content)
-        make("UIListLayout", {Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder}, p)
-        make("UIPadding", {
-            PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 14),
-            PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 18),
-        }, p)
-        panels[name] = p
-        return p
+    if cacheValido and isfile and isfile(uiFileName) then
+        local code = readfile(uiFileName)
+        local fn = loadstring(code)
+        if fn then return fn() end
     end
-
-    local function Section(parent, text)
-        local f = make("Frame", {
-            Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, LayoutOrder = nextOrder(parent),
-        }, parent)
-        make("TextLabel", {
-            Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Text = text, Font = FONT_TITLE,
-            TextSize = 18, TextColor3 = Theme.Accent, TextXAlignment = Enum.TextXAlignment.Left,
-        }, f)
-        line(f, {
-            Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -2), BackgroundColor3 = Theme.AccentDim,
-        }, "left")
-        return f
+    local codigoUi = game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/" .. _version .. "/main.lua")
+    if writefile then
+        writefile(uiFileName, codigoUi)
+        writefile(timeFileName, tostring(os.time()))
     end
+    return loadstring(codigoUi)()
+end)
 
-    local function Row(parent, h)
-        local r = make("Frame", {
-            Size = UDim2.new(1, 0, 0, h or 42), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
-            BorderSizePixel = 0, LayoutOrder = nextOrder(parent),
-        }, parent)
-        corner(r, 4)
-        stroke(r, Theme.Line, 1, 0.3)
-        return r
+if ok and result and type(result) == "table" then
+    WindUI = result
+else
+    warn("Error al cargar WindUI: " .. tostring(result))
+    return
+end
+
+local autoShootEnabled = false
+local autoShootAgresivoEnabled = false
+local autoShootTargetPart = "Cabeza"
+local silentAimManualEnabled = false
+local silentAimFovEnabled = false
+local silentAimTargetPart = "Cabeza"
+local fovVisiblePreference = false
+local fovRadius = 120
+local equipGunEnabled = false
+local espEnabled = false
+local espColor = Color3.fromRGB(5, 5, 5)
+local espGlow = true
+local hitboxEnabled = false
+local CustomHitboxSize = 15
+local customParts = {}
+local KillAllOn = false
+
+getgenv().CKOhubxTargetPart = nil
+
+local function refreshMonitor()
+    if autoShootEnabled or autoShootAgresivoEnabled or silentAimManualEnabled
+        or silentAimFovEnabled or equipGunEnabled or espEnabled then
+        startTargetMonitor()
+    else
+        stopTargetMonitor()
     end
+end
 
-    local function RowLabel(row, text, reserve, y)
-        return make("TextLabel", {
-            Size = UDim2.new(1, -(reserve or 84), 0, 20), Position = UDim2.new(0, 14, y and 0 or 0.5, y or -10),
-            BackgroundTransparency = 1, Text = text, Font = FONT, TextSize = 12, TextColor3 = Theme.Text,
-            TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-        }, row)
+local Window = WindUI:CreateWindow({
+    Title = "CKOhubx",
+    Author = "Chris & Oli",
+    Folder = "CKOhubx",
+    Acrylic = false,
+    Transparent = false,
+    NewElements = true,
+    HideSearchBar = false,
+    OpenButton = {
+        Title = "CKOhubx",
+        Icon = "solar:bolt-bold",
+        IconSize = 9,
+        CornerRadius = UDim.new(1),
+        StrokeThickness = 2,
+        Enabled = true,
+        Draggable = true,
+        Scale = 0.9,
+        Color = ColorSequence.new(Color3.fromHex("#0a1628"), Color3.fromHex("#1e3a6e"))
+    },
+    Topbar = { Height = 44, ButtonsType = "Default" }
+})
+
+local MainSection = Window:Section({ Title = "Funciones", Icon = "solar:star-bold", Opened = true })
+local ExtraSection = Window:Section({ Title = "Extra", Icon = "solar:widget-bold", Opened = true })
+
+local Tabs = {
+    Inicio = MainSection:Tab({ Title = "Inicio", Icon = "solar:home-bold" }),
+    Aim = MainSection:Tab({ Title = "Aimbot", Icon = "solar:target-bold" }),
+    Vis = MainSection:Tab({ Title = "Visuales", Icon = "solar:eye-bold" }),
+    KillAll = MainSection:Tab({ Title = "Kill All", Icon = "solar:danger-triangle-bold" }),
+    Credits = ExtraSection:Tab({ Title = "Creditos", Icon = "solar:crown-bold" }),
+}
+
+Tabs.Inicio:Section({ Title = "CKOhubx", Icon = "solar:info-circle-bold" })
+Tabs.Inicio:Paragraph({
+    Title = "Bienvenido",
+    Desc = "Script creado por el guapo de Chris y Oli. Compatible con Delta."
+})
+
+Tabs.Aim:Section({ Title = "Auto Shoot", Icon = "solar:bomb-bold" })
+Tabs.Aim:Toggle({
+    Title = "Auto Shoot Normal",
+    Value = false,
+    Callback = function(v) autoShootEnabled = v; refreshMonitor() end
+})
+Tabs.Aim:Toggle({
+    Title = "Auto Shoot Agresivo",
+    Value = false,
+    Callback = function(v) autoShootAgresivoEnabled = v; refreshMonitor() end
+})
+Tabs.Aim:Dropdown({
+    Title = "Parte del cuerpo",
+    Values = { "Cabeza", "Torso", "Cuerpo" },
+    Value = "Cabeza",
+    Callback = function(v)
+        autoShootTargetPart = v
+        silentAimTargetPart = v
     end
+})
 
-    local function Toggle(parent, title, default, onChange)
-        local row = Row(parent, 42)
-        searchIndex[#searchIndex + 1] = {title = title, tab = parent.Name}
-        RowLabel(row, title)
-        local pill = make("TextButton", {
-            Size = UDim2.new(0, 42, 0, 22), Position = UDim2.new(1, -56, 0.5, -11),
-            BackgroundColor3 = Theme.Off, Text = "", AutoButtonColor = false,
-        }, row)
-        corner(pill, 11)
-        local pillStroke = stroke(pill, Theme.Line, 1, 0.1)
-        local knob = make("Frame", {
-            Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 3, 0.5, -8),
-            BackgroundColor3 = Theme.Dim, BorderSizePixel = 0,
-        }, pill)
-        corner(knob, 8)
+Tabs.Aim:Section({ Title = "Silent Aim", Icon = "solar:crosshair-bold" })
+Tabs.Aim:Toggle({
+    Title = "Silent Aim",
+    Value = false,
+    Callback = function(v) silentAimManualEnabled = v; refreshMonitor() end
+})
+Tabs.Aim:Toggle({
+    Title = "Silent Aim (FOV)",
+    Value = false,
+    Callback = function(v) silentAimFovEnabled = v; refreshMonitor() end
+})
+Tabs.Aim:Toggle({
+    Title = "Mostrar FOV",
+    Value = false,
+    Callback = function(v) fovVisiblePreference = v end
+})
+Tabs.Aim:Slider({
+    Title = "Tamano FOV",
+    Value = { Min = 10, Max = 300, Default = 120 },
+    Step = 1,
+    Callback = function(v) fovRadius = v end
+})
 
-        local state = false
-        local api = {}
-        local function render(animate)
-            local info = TweenInfo.new(animate and 0.2 or 0, Enum.EasingStyle.Quad)
-            TweenService:Create(pill, info, {BackgroundColor3 = state and Theme.AccentDim or Theme.Off}):Play()
-            TweenService:Create(pillStroke, info, {Color = state and Theme.Accent or Theme.Line}):Play()
-            TweenService:Create(knob, info, {
-                Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8),
-                BackgroundColor3 = state and Theme.Text or Theme.Dim,
-            }):Play()
-        end
-        function api.Set(v, silent)
-            state = v and true or false
-            render(true)
-            if onChange and not silent then onChange(state) end
-        end
-        function api.Get() return state end
-        pill.MouseButton1Click:Connect(function() api.Set(not state) end)
-        state = default and true or false
-        render(false)
-        return api
-    end
-
-    local function bindDrag(hit, bar, cb)
-        local dragging = false
-        local function update(input)
-            local a = math.clamp((input.Position.X - bar.AbsolutePosition.X) / math.max(bar.AbsoluteSize.X, 1), 0, 1)
-            cb(a)
-        end
-        hit.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                update(input)
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                update(input)
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
-        end)
-    end
-
-    local function Slider(parent, title, minV, maxV, defaultV, callback)
-        local row = Row(parent, 56)
-        searchIndex[#searchIndex + 1] = {title = title, tab = parent.Name}
-        RowLabel(row, title, 90, 8)
-        local valueLabel = make("TextLabel", {
-            Size = UDim2.new(0, 60, 0, 20), Position = UDim2.new(1, -74, 0, 8), BackgroundTransparency = 1,
-            Text = tostring(defaultV), Font = FONT_BOLD, TextSize = 12, TextColor3 = Theme.Accent,
-            TextXAlignment = Enum.TextXAlignment.Right,
-        }, row)
-        local bar = make("Frame", {
-            Size = UDim2.new(1, -28, 0, 4), Position = UDim2.new(0, 14, 0, 38),
-            BackgroundColor3 = Theme.Off, BorderSizePixel = 0,
-        }, row)
-        corner(bar, 2)
-        local fill = make("Frame", {
-            Size = UDim2.new((defaultV - minV) / (maxV - minV), 0, 1, 0),
-            BackgroundColor3 = Theme.Accent, BorderSizePixel = 0,
-        }, bar)
-        corner(fill, 2)
-        local knob = make("Frame", {
-            Size = UDim2.new(0, 12, 0, 12), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, 0, 0.5, 0),
-            BackgroundColor3 = Theme.Text, BorderSizePixel = 0, ZIndex = 3,
-        }, fill)
-        corner(knob, 6)
-        stroke(knob, Theme.Accent, 1, 0)
-        local hit = make("TextButton", {
-            Size = UDim2.new(1, 0, 1, -24), Position = UDim2.new(0, 0, 0, 24),
-            BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
-        }, row)
-        bindDrag(hit, bar, function(alpha)
-            local val = minV + (maxV - minV) * alpha
-            fill.Size = UDim2.new(alpha, 0, 1, 0)
-            valueLabel.Text = tostring(math.floor(val * 10 + 0.5) / 10)
-            if callback then callback(val) end
-        end)
-    end
-
-    local function Dropdown(parent, title, options, default, callback)
-        local row = Row(parent, 42)
-        searchIndex[#searchIndex + 1] = {title = title, tab = parent.Name}
-        row.ZIndex = 5
-        RowLabel(row, title, 170)
-        local btn = make("TextButton", {
-            Size = UDim2.new(0, 130, 0, 26), Position = UDim2.new(1, -144, 0.5, -13),
-            BackgroundColor3 = Theme.Off, Text = tostring(default or options[1]), TextColor3 = Theme.Accent,
-            TextSize = 11, Font = FONT_BOLD, AutoButtonColor = false, ZIndex = 6,
-        }, row)
-        corner(btn, 4)
-        stroke(btn, Theme.Line, 1, 0.1)
-        make("TextLabel", {
-            Size = UDim2.new(0, 14, 1, 0), Position = UDim2.new(1, -18, 0, 0), BackgroundTransparency = 1,
-            Text = "â€º", Font = FONT_BOLD, TextSize = 16, TextColor3 = Theme.AccentDim, Rotation = 90, ZIndex = 7,
-        }, btn)
-
-        local list = make("Frame", {
-            Size = UDim2.new(0, 150, 0, #options * 26 + 8), AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, -14, 1, 4), BackgroundColor3 = Theme.Panel, BorderSizePixel = 0,
-            Visible = false, ZIndex = 20,
-        }, row)
-        corner(list, 4)
-        stroke(list, Theme.Accent, 1, 0.4)
-        make("UIPadding", {PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4)}, list)
-        make("UIListLayout", {Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder}, list)
-
-        local api = {}
-        function api.Set(v, silent)
-            btn.Text = tostring(v)
-            if callback and not silent then callback(v) end
-        end
-        for i, opt in ipairs(options) do
-            local o = make("TextButton", {
-                Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = "  " .. tostring(opt),
-                TextColor3 = Theme.Dim, TextSize = 11, Font = FONT, TextXAlignment = Enum.TextXAlignment.Left,
-                AutoButtonColor = false, LayoutOrder = i, ZIndex = 21,
-            }, list)
-            o.MouseEnter:Connect(function()
-                o.TextColor3 = Theme.Accent
-                o.BackgroundTransparency = 0.9
-                o.BackgroundColor3 = Theme.Accent
-            end)
-            o.MouseLeave:Connect(function()
-                o.TextColor3 = Theme.Dim
-                o.BackgroundTransparency = 1
-            end)
-            o.MouseButton1Click:Connect(function()
-                list.Visible = false
-                api.Set(opt)
-            end)
-        end
-        btn.MouseButton1Click:Connect(function() list.Visible = not list.Visible end)
-        return api
-    end
-
-    local function ColorPicker(parent, title, defaultColor, callback)
-        local row = Row(parent, 98)
-        searchIndex[#searchIndex + 1] = {title = title, tab = parent.Name}
-        RowLabel(row, title, 70, 8)
-        local R, G, B = defaultColor.R, defaultColor.G, defaultColor.B
-        local preview = make("Frame", {
-            Size = UDim2.new(0, 32, 0, 20), Position = UDim2.new(1, -46, 0, 8),
-            BackgroundColor3 = defaultColor, BorderSizePixel = 0,
-        }, row)
-        corner(preview, 4)
-        stroke(preview, Theme.Text, 1, 0.6)
-        local function fire()
-            local c = Color3.new(R, G, B)
-            preview.BackgroundColor3 = c
-            if callback then callback(c) end
-        end
-        local function channel(y, label, tint, initial, setter)
-            make("TextLabel", {
-                Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 14, 0, y), BackgroundTransparency = 1,
-                Text = label, Font = FONT_BOLD, TextSize = 10, TextColor3 = Theme.Dim,
-            }, row)
-            local bar = make("Frame", {
-                Size = UDim2.new(1, -62, 0, 4), Position = UDim2.new(0, 34, 0, y + 5),
-                BackgroundColor3 = Theme.Off, BorderSizePixel = 0,
-            }, row)
-            corner(bar, 2)
-            local fill = make("Frame", {
-                Size = UDim2.new(initial, 0, 1, 0), BackgroundColor3 = tint, BorderSizePixel = 0,
-            }, bar)
-            corner(fill, 2)
-            local knob = make("Frame", {
-                Size = UDim2.new(0, 10, 0, 10), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, 0, 0.5, 0),
-                BackgroundColor3 = Theme.Text, BorderSizePixel = 0, ZIndex = 3,
-            }, fill)
-            corner(knob, 5)
-            local hit = make("TextButton", {
-                Size = UDim2.new(1, -48, 0, 16), Position = UDim2.new(0, 30, 0, y - 1),
-                BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
-            }, row)
-            bindDrag(hit, bar, function(alpha)
-                fill.Size = UDim2.new(alpha, 0, 1, 0)
-                setter(alpha)
-                fire()
-            end)
-        end
-        channel(36, "R", Color3.fromRGB(190, 85, 85), R, function(a) R = a end)
-        channel(54, "G", Color3.fromRGB(95, 170, 105), G, function(a) G = a end)
-        channel(72, "B", Color3.fromRGB(95, 135, 205), B, function(a) B = a end)
-    end
-
-    local Home = NewPanel("HOME")
-    Section(Home, "PERFIL")
-
-    local card = make("Frame", {
-        Size = UDim2.new(1, 0, 0, 132), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
-        BorderSizePixel = 0, LayoutOrder = nextOrder(Home),
-    }, Home)
-    corner(card, 4)
-    stroke(card, Theme.Line, 1, 0.2)
-
-    local avatar = make("Frame", {
-        Size = UDim2.new(0, 96, 0, 96), Position = UDim2.new(0, 16, 0, 18),
-        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0,
-    }, card)
-    corner(avatar, 4)
-    stroke(avatar, Theme.Accent, 1.5, 0.1)
-    local avatarImg = make("ImageLabel", {
-        Size = UDim2.new(1, -6, 1, -6), Position = UDim2.new(0, 3, 0, 3), BackgroundTransparency = 1,
-        Image = "rbxthumb://type=AvatarHeadShot&id=" .. Player.UserId .. "&w=150&h=150",
-        ScaleType = Enum.ScaleType.Fit,
-    }, avatar)
-    corner(avatarImg, 3)
-
-    local function Field(y, label, value, font, size)
-        make("TextLabel", {
-            Size = UDim2.new(1, -140, 0, 12), Position = UDim2.new(0, 130, 0, y), BackgroundTransparency = 1,
-            Text = label, Font = FONT_BOLD, TextSize = 9, TextColor3 = Theme.AccentDim,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, card)
-        make("TextLabel", {
-            Size = UDim2.new(1, -140, 0, 22), Position = UDim2.new(0, 130, 0, y + 12), BackgroundTransparency = 1,
-            Text = value, Font = font, TextSize = size, TextColor3 = Theme.Text,
-            TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-        }, card)
-    end
-    Field(16, "USUARIO", Player.DisplayName .. "  @" .. Player.Name, FONT_TITLE, 20)
-    Field(52, "ID", tostring(Player.UserId), FONT, 13)
-
-    make("TextLabel", {
-        Size = UDim2.new(0, 60, 0, 12), Position = UDim2.new(0, 130, 0, 90), BackgroundTransparency = 1,
-        Text = "ESTADO", Font = FONT_BOLD, TextSize = 9, TextColor3 = Theme.AccentDim,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    }, card)
-    local statusDot = make("Frame", {
-        Size = UDim2.new(0, 8, 0, 8), Position = UDim2.new(0, 130, 0, 108),
-        BackgroundColor3 = Theme.Green, BorderSizePixel = 0,
-    }, card)
-    corner(statusDot, 4)
-    make("TextLabel", {
-        Size = UDim2.new(0, 80, 0, 16), Position = UDim2.new(0, 145, 0, 104), BackgroundTransparency = 1,
-        Text = "Activo", Font = FONT_BOLD, TextSize = 12, TextColor3 = Theme.Green,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    }, card)
-    make("TextLabel", {
-        Size = UDim2.new(0, 120, 0, 12), Position = UDim2.new(1, -134, 1, -20), BackgroundTransparency = 1,
-        Text = "BETA  Â·  OFICIAL", Font = FONT, TextSize = 9, TextColor3 = Theme.Dim,
-        TextXAlignment = Enum.TextXAlignment.Right,
-    }, card)
-
-    task.spawn(function()
-        while statusDot.Parent do
-            TweenService:Create(statusDot, TweenInfo.new(1, Enum.EasingStyle.Sine), {BackgroundTransparency = 0.6}):Play()
-            task.wait(1)
-            if not statusDot.Parent then break end
-            TweenService:Create(statusDot, TweenInfo.new(1, Enum.EasingStyle.Sine), {BackgroundTransparency = 0}):Play()
-            task.wait(1)
-        end
-    end)
-
-    local statRow = make("Frame", {
-        Size = UDim2.new(1, 0, 0, 54), BackgroundTransparency = 1, LayoutOrder = nextOrder(Home),
-    }, Home)
-    make("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-    }, statRow)
-    local function StatCard(order, title, value, color)
-        local c = make("Frame", {
-            Size = UDim2.new(1 / 3, -6, 1, 0), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
-            BorderSizePixel = 0, LayoutOrder = order,
-        }, statRow)
-        corner(c, 4)
-        stroke(c, Theme.Line, 1, 0.3)
-        make("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 12), Position = UDim2.new(0, 12, 0, 9), BackgroundTransparency = 1,
-            Text = title, Font = FONT_BOLD, TextSize = 9, TextColor3 = Theme.AccentDim,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, c)
-        return make("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 20), Position = UDim2.new(0, 12, 0, 25), BackgroundTransparency = 1,
-            Text = value, Font = FONT_BOLD, TextSize = 14, TextColor3 = color,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, c)
-    end
-    StatCard(1, "STATUS", "ONLINE", Theme.Green)
-    local pingValue = StatCard(2, "PING", "...", Theme.Accent)
-    StatCard(3, "BUILD", "STABLE", Theme.Accent)
-
-    task.spawn(function()
-        while pingValue.Parent do
-            local ping = 0
-            pcall(function() ping = math.floor(Player:GetNetworkPing() * 1000) end)
-            if ping > 0 then
-                pingValue.Text = ping .. " ms"
-                pingValue.TextColor3 = (ping < 60 and Theme.Green) or (ping < 100 and Theme.Accent)
-                    or (ping < 180 and Theme.Orange) or Theme.Red
-            else
-                pingValue.Text = "â€”"
-                pingValue.TextColor3 = Theme.Dim
-            end
-            task.wait(1)
-        end
-    end)
-
-    Section(Home, "COMUNIDAD")
-    local discordRow = Row(Home, 66)
-    make("TextLabel", {
-        Size = UDim2.new(1, -150, 0, 18), Position = UDim2.new(0, 14, 0, 12), BackgroundTransparency = 1,
-        Text = "Ãšnete al Discord: soporte y updates", Font = FONT, TextSize = 12, TextColor3 = Theme.Text,
-        TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-    }, discordRow)
-    make("TextLabel", {
-        Size = UDim2.new(1, -150, 0, 16), Position = UDim2.new(0, 14, 0, 34), BackgroundTransparency = 1,
-        Text = DISCORD_URL, Font = FONT, TextSize = 11, TextColor3 = Theme.Link,
-        TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-    }, discordRow)
-    local discordBtn = make("TextButton", {
-        Size = UDim2.new(0, 116, 0, 30), Position = UDim2.new(1, -130, 0.5, -15), BackgroundColor3 = Theme.Off,
-        Text = "COPIAR ENLACE", Font = FONT_BOLD, TextSize = 11, TextColor3 = Theme.Accent, AutoButtonColor = false,
-    }, discordRow)
-    corner(discordBtn, 4)
-    local discordStroke = stroke(discordBtn, Theme.AccentDim, 1, 0.1)
-    local copied = false
-    discordBtn.MouseEnter:Connect(function()
-        if not copied then TweenService:Create(discordStroke, TweenInfo.new(0.15), {Color = Theme.Accent}):Play() end
-    end)
-    discordBtn.MouseLeave:Connect(function()
-        if not copied then TweenService:Create(discordStroke, TweenInfo.new(0.15), {Color = Theme.AccentDim}):Play() end
-    end)
-    discordBtn.MouseButton1Click:Connect(function()
-        if copied then return end
-        pcall(function() setclipboard(DISCORD_URL) end)
-        copied = true
-        discordBtn.Text = "COPIADO"
-        discordBtn.TextColor3 = Theme.Green
-        discordStroke.Color = Theme.Green
-        task.wait(1.5)
-        copied = false
-        discordBtn.Text = "COPIAR ENLACE"
-        discordBtn.TextColor3 = Theme.Accent
-        discordStroke.Color = Theme.AccentDim
-    end)
-
-    local autoShootEnabled = false
-    local autoShootAgresivoEnabled = false
-    local autoShootTargetPart = "Cabeza"
-    local silentAimManualEnabled = false
-    local silentAimFovEnabled = false
-    local silentAimTargetPart = "Cabeza"
-    local fovVisiblePreference = false
-    local fovRadius = 120
-    local equipGunEnabled = false
-    local espEnabled = false
-    local espColor = Color3.fromRGB(5, 5, 5)
-    local espGlow = true
-
-    getgenv().CKOhubxTargetPart = nil
-
-    local function refreshMonitor()
-        if autoShootEnabled or autoShootAgresivoEnabled or silentAimManualEnabled
-            or silentAimFovEnabled or equipGunEnabled or espEnabled then
-            startTargetMonitor()
-        else
-            stopTargetMonitor()
-        end
-    end
-
-    local Aim = NewPanel("AIMBOT")
-    Section(Aim, "AUTO SHOOT")
-    Toggle(Aim, "AUTO SHOOT NORMAL", false, function(v) autoShootEnabled = v; refreshMonitor() end)
-    Toggle(Aim, "AUTO SHOOT AGRESIVO", false, function(v) autoShootAgresivoEnabled = v; refreshMonitor() end)
-
-    local partMap = {["CABEZA"] = "Cabeza", ["TORSO"] = "Torso", ["CUERPO COMPLETO"] = "Cuerpo"}
-    Dropdown(Aim, "TARGET PARTE DEL CUERPO", {"CABEZA", "TORSO", "CUERPO COMPLETO"}, "CABEZA", function(v)
-        autoShootTargetPart = partMap[v] or "Cabeza"
-        silentAimTargetPart = autoShootTargetPart
-    end)
-
-    local equipWorkerRunning = false
-    local function startEquipWorker()
-        if equipWorkerRunning or not equipGunEnabled then return end
-        equipWorkerRunning = true
-        task.spawn(function()
-            local gunRayParams = RaycastParams.new()
-            gunRayParams.FilterType = Enum.RaycastFilterType.Exclude
-            while equipGunEnabled do
-                task.wait(0.1)
-                if not equipGunEnabled then break end
-                if not IsInMatchStrict() then continue end
-                local char = Player.Character
-                local hum = char and char:FindFirstChildOfClass("Humanoid")
-                if not char or not hum then continue end
-                if hum.Health <= 0 then continue end
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local head = char:FindFirstChild("Head")
-                if not hrp then continue end
-                local originPos = head and head.Position or hrp.Position
-                local hayEnemigoVisible = false
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= Player and esEnemigoValido(p) then
-                        local pChar = p.Character
-                        if pChar then
-                            local targetPart = pChar:FindFirstChild("Head") or pChar:FindFirstChild("UpperTorso")
-                                or pChar:FindFirstChild("Torso") or pChar:FindFirstChild("HumanoidRootPart")
-                            if targetPart and targetPart:IsA("BasePart") then
-                                gunRayParams.FilterDescendantsInstances = {char, pChar}
-                                local result = workspace:Raycast(originPos, targetPart.Position - originPos, gunRayParams)
-                                if not result and IsInMatchStrict() then
-                                    hayEnemigoVisible = true
-                                    break
-                                end
-                            end
-                        end
-                    end
-                end
-                if not hayEnemigoVisible then continue end
-                local pistola = obtenerPistola()
-                if not pistola then continue end
-                char = Player.Character
-                hum = char and char:FindFirstChildOfClass("Humanoid")
-                if not char or not hum then continue end
-                pistola = obtenerPistola()
-                if not pistola then continue end
-                if pistola.Parent ~= char then pcall(function() hum:EquipTool(pistola) end) end
-                task.wait(0.35)
-                if not equipGunEnabled then break end
-                char = Player.Character
-                hum = char and char:FindFirstChildOfClass("Humanoid")
-                if char and hum then pcall(function() hum:UnequipTools() end) end
-                task.wait(1.9)
-            end
-            equipWorkerRunning = false
-        end)
-    end
-    Toggle(Aim, "EQUIPA LA ARMA AUTOMÃTICAMENTE", false, function(v)
-        equipGunEnabled = v
-        refreshMonitor()
-        if v then startEquipWorker() end
-    end)
-
-    Section(Aim, "SILENT AIM")
-    Toggle(Aim, "SILENT AIM", false, function(v) silentAimManualEnabled = v; refreshMonitor() end)
-    Toggle(Aim, "SILENT AIM (CON FOV)", false, function(v) silentAimFovEnabled = v; refreshMonitor() end)
-    Toggle(Aim, "MOSTRAR FOV", false, function(v) fovVisiblePreference = v end)
-    Slider(Aim, "TAMAÃ‘O DEL FOV", 10, 200, 120, function(v) fovRadius = v end)
-
- Section(Aim, "HITBOX INVISIBLE")
-
-    local hitboxEnabled = false
-    local CustomHitboxSize = 15
-    local customParts = {}
-
-    Toggle(Aim, "HITBOX INVISIBLE", false, function(s)
+Tabs.Aim:Section({ Title = "Hitbox", Icon = "solar:box-bold" })
+Tabs.Aim:Toggle({
+    Title = "Hitbox Invisible",
+    Value = false,
+    Callback = function(s)
         hitboxEnabled = s
         if not s then
-            for player, part in pairs(customParts) do
-                if part and part.Parent then part:Destroy() end
+            for _, part in pairs(customParts) do
+                if part and part.Parent then pcall(function() part:Destroy() end) end
             end
             table.clear(customParts)
         end
-    end)
-
-    Slider(Aim, "TAMAÃ‘O DEL HITBOX", 1, 100, 15, function(v)
-        CustomHitboxSize = v
-    end)
-
-    
-    task.spawn(function()
-        while task.wait(0.2) do
-            if not hitboxEnabled then continue end
-            
-            local enLobby = false
-            pcall(function() enLobby = estaEnLobby() end)
-            if enLobby then continue end
-
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= Player and isEnemy(player) and player.Character then
-                    local character = player.Character
-                    local rootPart = character:FindFirstChild("HumanoidRootPart")
-                    local humanoid = character:FindFirstChild("Humanoid")
-                    
-                    if rootPart and humanoid and humanoid.Health > 0 then
-                        
-                        
-                        local p = character:FindFirstChild("CKOhubx")
-                        
-                        if not p then
-                            p = Instance.new("Part")
-                            p.Name = "CKOhubx"
-                            p.Size = Vector3.new(CustomHitboxSize, CustomHitboxSize, CustomHitboxSize)
-                            p.Transparency = 1
-                            p.CanCollide = false
-                            p.CanTouch = false
-                            p.CanQuery = true   
-                            p.Massless = true
-                            p.CFrame = rootPart.CFrame
-                            p.Parent = character
-                            
-                            local weld = Instance.new("WeldConstraint")
-                            weld.Name = "CKOhubx"
-                            weld.Part0 = rootPart
-                            weld.Part1 = p
-                            weld.Parent = p
-                            
-                            customParts[player] = p
-                        else
-                            
-                            local targetSize = Vector3.new(CustomHitboxSize, CustomHitboxSize, CustomHitboxSize)
-                            if p.Size ~= targetSize then
-                                p.Size = targetSize
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-        
-
-    local Vis = NewPanel("VISUALS")
-    local espFolder = Instance.new("Folder")
-    espFolder.Name = "CKOhubx"
-    espFolder.Parent = ScreenGui
-
-    Section(Vis, "ESP")
-    Toggle(Vis, "ESP HIGHLIGHT", false, function(v) espEnabled = v; refreshMonitor() end)
-    ColorPicker(Vis, "COLOR DEL ESP", Color3.fromRGB(5, 5, 5), function(c) espColor = c end)
-    Toggle(Vis, "ACTIVAR ESP", true, function(v) espGlow = v end)
-
-    local activeESPs = {}
-    local function cleanAllESPs()
-        for p, hl in pairs(activeESPs) do
-            if hl then hl:Destroy() end
-            activeESPs[p] = nil
-        end
     end
-    Players.PlayerRemoving:Connect(function(p)
-        if activeESPs[p] then
-            activeESPs[p]:Destroy()
-            activeESPs[p] = nil
-        end
-    end)
-    task.spawn(function()
-        while task.wait(0.2) do
-            if espEnabled and IsInMatchStrict() then
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= Player and isEnemy(p) then
-                        local char = p.Character
-                        if char and char:FindFirstChild("Head") then
-                            local hl = activeESPs[p]
-                            if not hl or hl.Adornee ~= char or hl.Parent ~= espFolder then
-                                if hl then hl:Destroy() end
-                                hl = Instance.new("Highlight")
-                                hl.Name = "CKOhubx" .. p.Name
-                                hl.FillTransparency = 0.6
-                                hl.OutlineTransparency = 0.6
-                                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                                hl.Adornee = char
-                                hl.Parent = espFolder
-                                activeESPs[p] = hl
-                            end
-                            hl.Enabled = espGlow
-                            hl.FillColor = espColor
-                            hl.OutlineColor = espColor
-                        elseif activeESPs[p] then
-                            activeESPs[p]:Destroy()
-                            activeESPs[p] = nil
-                        end
-                    elseif activeESPs[p] then
-                        activeESPs[p]:Destroy()
-                        activeESPs[p] = nil
-                    end
-                end
-            else
-                cleanAllESPs()
-            end
-        end
-    end)
+})
+Tabs.Aim:Slider({
+    Title = "Tamano Hitbox",
+    Value = { Min = 1, Max = 100, Default = 15 },
+    Step = 1,
+    Callback = function(v) CustomHitboxSize = v end
+})
 
-    local Move = NewPanel("MOVEMENT")
-    local PlatformActive = false
-    local platformSpawned = false
-    local activePlatforms = {}
+Tabs.Vis:Section({ Title = "ESP", Icon = "solar:eye-bold" })
+Tabs.Vis:Toggle({
+    Title = "ESP Highlight",
+    Value = false,
+    Callback = function(v) espEnabled = v; refreshMonitor() end
+})
+Tabs.Vis:Toggle({
+    Title = "ESP Glow",
+    Value = true,
+    Callback = function(v) espGlow = v end
+})
+Tabs.Vis:Colorpicker({
+    Title = "Color ESP",
+    Default = Color3.fromRGB(5, 5, 5),
+    Callback = function(c) espColor = c end
+})
 
-    local function StartPlatforms()
-        if platformSpawned then return end
-        platformSpawned = true
-        task.spawn(function()
-            while PlatformActive do
-                task.wait(0.05)
-                local char = Player.Character
-                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
-                    local hum = char.Humanoid
-                    if hum.MoveDirection.Magnitude > 0 or char.HumanoidRootPart.AssemblyLinearVelocity.Y ~= 0 then
-                        local platform = Instance.new("Part")
-                        platform.Size = Vector3.new(6, 0.6, 6)
-                        platform.Anchored = true
-                        platform.CanCollide = true
-                        platform.Color = Color3.fromRGB(5, 5, 5)
-                        platform.Material = Enum.Material.Neon
-                        platform.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -3.3, 0)
-                        platform.Parent = workspace
-                        table.insert(activePlatforms, platform)
-                        if #activePlatforms > 3 then
-                            local oldPlatform = table.remove(activePlatforms, 1)
-                            if oldPlatform then oldPlatform:Destroy() end
-                        end
-                    end
-                end
-            end
-        end)
-    end
-    local function StopPlatforms()
-        PlatformActive = false
-        platformSpawned = false
-        for _, plat in ipairs(activePlatforms) do
-            if plat then plat:Destroy() end
-        end
-        activePlatforms = {}
-    end
-
-    Section(Move, "MOVIMIENTO")
-    Toggle(Move, "FIXED PLATFORM", false, function(v)
-        PlatformActive = v
-        if v then StartPlatforms() else StopPlatforms() end
-    end) 
-
-    Section(Move, "FAKE LAG")
-    
-    local fakeLagEnabled = false
-    local frozenParts = {}
-
-    Toggle(Move, "FAKE LAG", false, function(s)
-        fakeLagEnabled = s
-        if not s then
-            for _, part in pairs(frozenParts) do
-                if part and part.Parent then
-                    part.Anchored = false
-                end
-            end
-            table.clear(frozenParts)
-        end
-    end)
-
-    task.spawn(function()
-        while task.wait(0.1) do
-            if fakeLagEnabled then
-                for _, other in ipairs(Players:GetPlayers()) do
-                    if other ~= Player and other.Character then
-                        local hrp = other.Character:FindFirstChild("HumanoidRootPart")
-                        local hum = other.Character:FindFirstChild("Humanoid")
-                        
-                        if hrp and hum and hum.Health > 0 then
-                            if not hrp.Anchored then
-                                hrp.Anchored = true
-                                frozenParts[other] = hrp
-                            end
-                        end
-                    end
-                end
-            else
-                if next(frozenParts) ~= nil then
-                    for player, part in pairs(frozenParts) do
-                        if part and part.Parent then
-                            part.Anchored = false
-                        end
-                        frozenParts[player] = nil
-                    end
-                end
-            end
-        end
-    end)
-            
-    Section(Move, "SPEED")
-    
-    local cframeSpeedEnabled = false
-    local cframeSpeedValue = 5
-    local cframeConnection = nil
-
-    Toggle(Move, "ACTIVAR CFRAME SPEED", false, function(s)
-        cframeSpeedEnabled = s
-        if s then
-            if cframeConnection then cframeConnection:Disconnect() end
-            
-            cframeConnection = RunService.RenderStepped:Connect(function()
-                if not cframeSpeedEnabled then return end
-                
-                local char = Player.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                local hum = char and char:FindFirstChild("Humanoid")
-                
-                if hrp and hum and hum.Health > 0 and hum.MoveDirection.Magnitude > 0 then
-                    local moveDir = hum.MoveDirection
-                    hrp.CFrame = hrp.CFrame + (moveDir * cframeSpeedValue * 0.15)
-                end
-            end)
-        else
-            if cframeConnection then
-                cframeConnection:Disconnect()
-                cframeConnection = nil
-            end
-        end
-    end)
-
-    Slider(Move, "VELOCIDAD DEL SPEED", 1, 50, 5, function(v)
-        cframeSpeedValue = v
-    end)
-             
-    local Anim = NewPanel("ANIMATIONS")
-    local animSelected = {}
-
-    local function ApplyAnims(ids)
-        local char = Player.Character
-        if not char then return end
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        local Animate = char:FindFirstChild("Animate")
-        if not Animate or not hum then return end
-        local animator = hum:FindFirstChildOfClass("Animator")
-        if animator then
-            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                track:Stop(0)
-            end
-        end
-        local function setAnimId(parentName, childName, newId)
-            local parentObj = Animate:FindFirstChild(parentName)
-            if parentObj then
-                local animObj = parentObj:FindFirstChild(childName)
-                if animObj and animObj:IsA("Animation") then
-                    animObj.AnimationId = newId or "rbxassetid://0"
-                end
-            end
-        end
-        setAnimId("idle", "Animation1", ids.idle1)
-        setAnimId("idle", "Animation2", ids.idle2)
-        setAnimId("walk", "WalkAnim", ids.walk)
-        setAnimId("run", "RunAnim", ids.run)
-        setAnimId("jump", "JumpAnim", ids.jump)
-        setAnimId("fall", "FallAnim", ids.fall)
-        Animate.Enabled = false
-        task.wait(0.03)
-        Animate.Enabled = true
-        if hum.Health > 0 then
-            hum:ChangeState(Enum.HumanoidStateType.Landed)
-        end
-    end
-
-    local animData = {
-        {"Astronaut", 891621366, 891633237, 891667138, 891636393, 891627522, 891617961},
-        {"Bubbly", 910004836, 910009958, 910034870, 910025107, 910016857, 910001910},
-        {"Cartoony", 742637544, 742638445, 742640026, 742638842, 742637942, 742637151},
-        {"Elder", 845397899, 845400520, 845403856, 845386501, 845398858, 845396048},
-        {"Knight", 657595757, 657568135, 657552124, 657564596, 658409194, 657600338},
-        {"Levitation", 616006778, 616008087, 616013216, 616010382, 616008936, 616005863},
-        {"Mage", 707742142, 707855907, 707897309, 707861613, 707853694, 707829716},
-        {"Ninja", 656117400, 656118341, 656121766, 656118852, 656117878, 656115606},
-        {"Pirate", 750781874, 750782770, 750785693, 750783738, 750782230, 750780242},
-        {"Robot", 616088211, 616089559, 616095330, 616091570, 616090535, 616087089},
-        {"Stylish", 616136790, 616138447, 616146177, 616140816, 616139451, 616134815},
-        {"SuperHero", 616111295, 616113536, 616122287, 616117076, 616115533, 616108001},
-        {"Toy", 782841498, 782845736, 782843345, 782842708, 782847020, 782846423},
-        {"Vampire", 1083445855, 1083450166, 1083473930, 1083462077, 1083455352, 1083443587},
-        {"Werewolf", 1083195517, 1083214717, 1083178339, 1083216690, 1083218792, 1083189019},
-        {"Zombie", 616158929, 616160636, 616168032, 616163682, 616161997, 616157476},
-        {"Patrol", 1149612882, 1150842221, 1151231493, 1150967949, 1148811837, 1148863382},
-        {"Confident", 1069977950, 1069987858, 1070017263, 1070001516, 1069984524, 1069973677},
-        {"Popstar", 1212900985, 1150842221, 1212980338, 1212980348, 1212954642, 1212900995},
-        {"Cowboy", 1014390418, 1014398616, 1014421541, 1014401683, 1014394726, 1014384571},
-        {"Ghost", 616006778, 616008087, 616013216, 616010382, 616008936, 616005863},
-        {"Sneaky", 1132473842, 1132477671, 1132510133, 1132494274, 1132489853, 1132469004},
-        {"Princess", 941003647, 941013098, 941028902, 941015281, 941008832, 941000007},
-        {"None", 0, 0, 0, 0, 0, 0},
-        {"Anthro (Default)", 2510196951, 2510197257, 2510202577, 2510198475, 2510197830, 2510195892},
-    }
-    local function asset(id) return "http://www.roblox.com/asset/?id=" .. id end
-
-    Section(Anim, "ANIMACIONES")
-    local AnimList
-    Toggle(Anim, "ANIMACIONES", false, function(on)
-        animSelected = {}
+Tabs.KillAll:Section({ Title = "Kill All", Icon = "solar:danger-triangle-bold" })
+Tabs.KillAll:Toggle({
+    Title = "Kill All",
+    Desc = "Teleport + cuchillo a enemigos",
+    Value = false,
+    Callback = function(on)
+        KillAllOn = on
         if on then
-            AnimList.Visible = true
+            pcall(function() CKOhubxKillAllInstance:Start() end)
         else
-            AnimList.Visible = false
-            local char = Player.Character
-            local animate = char and char:FindFirstChild("Animate")
-            if animate then
-                animate.Enabled = false
-                task.wait(0.05)
-                animate.Enabled = true
-            end
-        end
-    end)
-    AnimList = make("Frame", {
-        Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
-        Visible = false, LayoutOrder = nextOrder(Anim),
-    }, Anim)
-    make("UIListLayout", {Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder}, AnimList)
-
-    for i, a in ipairs(animData) do
-        local ids = {
-            idle1 = asset(a[2]), idle2 = asset(a[3]), walk = asset(a[4]),
-            run = asset(a[5]), jump = asset(a[6]), fall = asset(a[7]),
-        }
-        local btn = make("TextButton", {
-            Size = UDim2.new(1, 0, 0, 38), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
-            Text = "", AutoButtonColor = false, LayoutOrder = i,
-        }, AnimList)
-        corner(btn, 4)
-        local btnStroke = stroke(btn, Theme.Line, 1, 0.3)
-        local label = make("TextLabel", {
-            Size = UDim2.new(1, -50, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1,
-            Text = a[1], Font = FONT, TextSize = 12, TextColor3 = Theme.Dim,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, btn)
-        local arrow = make("TextLabel", {
-            Size = UDim2.new(0, 24, 1, 0), Position = UDim2.new(1, -30, 0, 0), BackgroundTransparency = 1,
-            Text = "â€º", Font = FONT_BOLD, TextSize = 20, TextColor3 = Theme.AccentDim,
-        }, btn)
-        btn.MouseEnter:Connect(function()
-            TweenService:Create(btnStroke, TweenInfo.new(0.18), {Color = Theme.Accent, Transparency = 0.1}):Play()
-            TweenService:Create(label, TweenInfo.new(0.18), {TextColor3 = Theme.Text}):Play()
-            TweenService:Create(arrow, TweenInfo.new(0.18), {TextColor3 = Theme.Accent}):Play()
-        end)
-        btn.MouseLeave:Connect(function()
-            TweenService:Create(btnStroke, TweenInfo.new(0.18), {Color = Theme.Line, Transparency = 0.3}):Play()
-            TweenService:Create(label, TweenInfo.new(0.18), {TextColor3 = Theme.Dim}):Play()
-            TweenService:Create(arrow, TweenInfo.new(0.18), {TextColor3 = Theme.AccentDim}):Play()
-        end)
-        btn.MouseButton1Click:Connect(function()
-            animSelected = ids
-            ApplyAnims(ids)
-        end)
-    end
-
-    local Farm = NewPanel("HIGH FARM")
-    Section(Farm, "EVENTO")
-    Toggle(Farm, "AUTO FARM HALLOWEEN", false, function(v)
-        getgenv().CKOhubxAutoEventFarm = v
-    end)
-
-    local Kills = NewPanel("HIGH KILLS")
-    Section(Kills, "KILL ALL")
-    Toggle(Kills, "KILL ALL BY NEXVYR HUB", false, function(on)
-        if on then CKOhubxKillAllInstance:Start() else CKOhubxKillAllInstance:Stop() end
-    end)
-    Slider(Kills, "VIBRACIÃ“N", 0.0, 3.0, 0.8, function(v) KILLALL_JITTER_AMPLITUDE = v end)
-    Slider(Kills, "RADIO DE ACTIVACIÃ“N", 2.75, 9.0, 6.0, function(v) KILLALL_TRIGGER_RADIUS = v end)
-
-    local Settings = NewPanel("SETTINGS")
-    Section(Settings, "AJUSTES")
-    local noteRow = Row(Settings, 42)
-    RowLabel(noteRow, "Sin ajustes disponibles por ahora.", 28)
-
-    local Credits = NewPanel("CREDITS")
-    Section(Credits, "CREDITOS")
-    local creditCard = make("Frame", {
-        Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = Theme.Card,
-        BackgroundTransparency = 0.3, BorderSizePixel = 0, LayoutOrder = nextOrder(Credits),
-    }, Credits)
-    corner(creditCard, 4)
-    stroke(creditCard, Theme.Line, 1, 0.2)
-    make("UIPadding", {
-        PaddingTop = UDim.new(0, 16), PaddingBottom = UDim.new(0, 16),
-        PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18),
-    }, creditCard)
-    make("UIListLayout", {Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder}, creditCard)
-    local accentHex = "#" .. Theme.Accent:ToHex()
-    local function creditLine(order, text, font, size, color, align)
-        return make("TextLabel", {
-            Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
-            Text = text, RichText = true, TextWrapped = true, Font = font, TextSize = size, TextColor3 = color,
-            TextXAlignment = align or Enum.TextXAlignment.Left, LayoutOrder = order,
-        }, creditCard)
-    end
-    creditLine(1, "Script creado por el guapo de Chris y Oli", FONT_TITLE, 22, Theme.Text)
-    line(creditCard, {Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = Theme.AccentDim, LayoutOrder = 2}, "left")
-    creditLine(3, '<font color="' .. accentHex .. '"><b>Chris</b></font> -- Creador del script.', FONT, 13, Theme.Text)
-    creditLine(4, '<font color="' .. accentHex .. '"><b>Oli</b></font> -- Creador del script.', FONT, 13, Theme.Text)
-    creditLine(5, "CKOhubx", FONT_TITLE, 16, Theme.Dim, Enum.TextXAlignment.Center)
-
-    local function tintIcon(parts, color, animate)
-        local info = TweenInfo.new(animate and 0.15 or 0)
-        for _, part in ipairs(parts) do
-            if part:IsA("UIStroke") then
-                TweenService:Create(part, info, {Color = color}):Play()
-            else
-                TweenService:Create(part, info, {BackgroundColor3 = color}):Play()
-            end
+            pcall(function() CKOhubxKillAllInstance:Stop() end)
         end
     end
+})
 
-    local function BuildIcon(name, parent)
-        local box = make("Frame", {
-            Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 14, 0.5, -8), BackgroundTransparency = 1, ZIndex = 4,
-        }, parent)
-        local parts = {}
-        local function fill(x, y, w, h, rot, r)
-            local f = make("Frame", {
-                Size = UDim2.new(0, w, 0, h), Position = UDim2.new(0, x, 0, y), Rotation = rot or 0,
-                BackgroundColor3 = Theme.Dim, BorderSizePixel = 0, ZIndex = 4,
-            }, box)
-            if r then corner(f, r) end
-            parts[#parts + 1] = f
-            return f
-        end
-        local function outline(x, y, w, h, r, th, host)
-            local f = make("Frame", {
-                Size = UDim2.new(0, w, 0, h), Position = UDim2.new(0, x, 0, y), BackgroundTransparency = 1, ZIndex = 4,
-            }, host or box)
-            if r then corner(f, r) end
-            parts[#parts + 1] = stroke(f, Theme.Dim, th or 1.5, 0)
-            return f
-        end
+Tabs.Credits:Section({ Title = "Creditos", Icon = "solar:crown-bold" })
+Tabs.Credits:Paragraph({
+    Title = "CKOhubx",
+    Desc = "Script creado por el guapo de Chris y Oli"
+})
+Tabs.Credits:Paragraph({
+    Title = "Chris",
+    Desc = "Creador del script"
+})
+Tabs.Credits:Paragraph({
+    Title = "Oli",
+    Desc = "Creador del script"
+})
 
-        if name == "HOME" then
-            outline(3, 8, 10, 6, 1, 1.5)
-            fill(1.5, 4.5, 8, 1.5, -38, 1)
-            fill(6.5, 4.5, 8, 1.5, 38, 1)
-            fill(7, 10.5, 2, 3.5, 0, 1)
-        elseif name == "AIMBOT" then
-            outline(3, 3, 10, 10, 5, 1.5)
-            fill(7.25, 0, 1.5, 4, 0, 1)
-            fill(7.25, 12, 1.5, 4, 0, 1)
-            fill(0, 7.25, 4, 1.5, 0, 1)
-            fill(12, 7.25, 4, 1.5, 0, 1)
-            fill(7, 7, 2, 2, 0, 1)
-        elseif name == "VISUALS" then
-            outline(1, 4, 14, 8, 4, 1.5)
-            fill(5.5, 5.5, 5, 5, 0, 3)
-        elseif name == "MOVEMENT" then
-            fill(1.5, 7.25, 11, 1.5, 0, 1)
-            fill(9, 5.25, 6, 1.5, 45, 1)
-            fill(9, 9.25, 6, 1.5, -45, 1)
-        elseif name == "ANIMATIONS" then
-            outline(2, 3, 12, 10, 2, 1.5)
-            fill(5, 3, 1.5, 10, 0, 1)
-            fill(10, 3, 1.5, 10, 0, 1)
-        elseif name == "HIGH FARM" then
-            fill(7.25, 7, 1.5, 8, 0, 1)
-            fill(2, 4.5, 6, 3.2, -25, 2)
-            fill(8, 2.5, 6, 3.2, 25, 2)
-        elseif name == "HIGH KILLS" then
-            outline(2.5, 1.5, 11, 9, 5, 1.5)
-            outline(5.5, 9.5, 5, 4.5, 1, 1.5)
-            fill(5, 5.5, 2, 2, 0, 1)
-            fill(9, 5.5, 2, 2, 0, 1)
-        elseif name == "SETTINGS" then
-            outline(4.5, 4.5, 7, 7, 4, 1.5)
-            for k = 0, 7 do
-                local a = k * 45
-                local cx = 8 + math.cos(math.rad(a)) * 6
-                local cy = 8 + math.sin(math.rad(a)) * 6
-                fill(cx - 1.75, cy - 1, 3.5, 2, a, 0)
-            end
-        elseif name == "CREDITS" then
-            outline(5.5, 1.5, 5, 5, 3, 1.5)
-            local clip = make("Frame", {
-                Size = UDim2.new(0, 12, 0, 6), Position = UDim2.new(0, 2, 0, 9), BackgroundTransparency = 1,
-                ClipsDescendants = true, ZIndex = 4,
-            }, box)
-            outline(0, 0, 12, 12, 6, 1.5, clip)
-        end
-        return parts
-    end
-
-    local navs = {}
-    local current
-    local function Select(name)
-        current = name
-        for n, d in pairs(navs) do
-            local on = (n == name)
-            d.deco.Visible = on
-            TweenService:Create(d.btn, TweenInfo.new(0.15), {TextColor3 = on and Theme.Text or Theme.Dim}):Play()
-            tintIcon(d.icon, on and Theme.Accent or Theme.Dim, true)
-        end
-        for n, p in pairs(panels) do p.Visible = (n == name) end
-    end
-
-    local function NavItem(text, order)
-        local item = make("Frame", {
-            Size = UDim2.new(1, -16, 0, 28), BackgroundTransparency = 1, LayoutOrder = order,
-        }, Side)
-        local deco = make("Frame", {
-            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, ZIndex = 1,
-        }, item)
-        local glow = make("Frame", {
-            Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, ZIndex = 1,
-        }, deco)
-        make("UIGradient", {Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.86), NumberSequenceKeypoint.new(1, 1),
-        })}, glow)
-        line(deco, {Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = Theme.Accent, ZIndex = 1}, "center")
-        line(deco, {
-            Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1),
-            BackgroundColor3 = Theme.Accent, ZIndex = 1,
-        }, "center")
-        diamond(deco, {1, -17}, {0.5, -3}, 5)
-
-        local btn = make("TextButton", {
-            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = text, Font = FONT_TITLE,
-            TextSize = 17, TextColor3 = Theme.Dim, AutoButtonColor = false, ZIndex = 3,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, item)
-        make("UIPadding", {PaddingLeft = UDim.new(0, 40)}, btn)
-        local iconParts = BuildIcon(text, item)
-        navs[text] = {btn = btn, deco = deco, item = item, icon = iconParts}
-        btn.MouseEnter:Connect(function()
-            if current ~= text then
-                TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(190, 205, 235)}):Play()
-                tintIcon(iconParts, Color3.fromRGB(190, 205, 235), true)
-            end
-        end)
-        btn.MouseLeave:Connect(function()
-            if current ~= text then
-                TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Theme.Dim}):Play()
-                tintIcon(iconParts, Theme.Dim, true)
-            end
-        end)
-        btn.MouseButton1Click:Connect(function()
-            if SearchBox.Text ~= "" then SearchBox.Text = "" end
-            Select(text)
-        end)
-    end
-
-    local tabOrder = {"HOME", "AIMBOT", "VISUALS", "MOVEMENT", "ANIMATIONS", "HIGH FARM", "HIGH KILLS", "SETTINGS", "CREDITS"}
-    for i, name in ipairs(tabOrder) do NavItem(name, i) end
-    Select("HOME")
-
-    local SearchPanel = NewPanel("SEARCH")
-    Section(SearchPanel, "SEARCH")
-    local resultRows = {}
-    local function runSearch()
-        local q = string.lower(string.match(SearchBox.Text, "^%s*(.-)%s*$"))
-        for name, d in pairs(navs) do
-            d.item.Visible = (q == "") or (string.find(string.lower(name), q, 1, true) ~= nil)
-        end
-        for _, r in ipairs(resultRows) do r:Destroy() end
-        resultRows = {}
-        if q == "" then
-            for n, p in pairs(panels) do p.Visible = (n == current) end
-            return
-        end
-        for n, p in pairs(panels) do p.Visible = (n == "SEARCH") end
-        local found = 0
-        for _, e in ipairs(searchIndex) do
-            if string.find(string.lower(e.title), q, 1, true) then
-                found = found + 1
-                local b = make("TextButton", {
-                    Size = UDim2.new(1, 0, 0, 36), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
-                    Text = "", AutoButtonColor = false, LayoutOrder = nextOrder(SearchPanel),
-                }, SearchPanel)
-                corner(b, 4)
-                local bs = stroke(b, Theme.Line, 1, 0.3)
-                make("TextLabel", {
-                    Size = UDim2.new(1, -130, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1,
-                    Text = e.title, Font = FONT, TextSize = 12, TextColor3 = Theme.Text,
-                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-                }, b)
-                make("TextLabel", {
-                    Size = UDim2.new(0, 110, 1, 0), Position = UDim2.new(1, -122, 0, 0), BackgroundTransparency = 1,
-                    Text = e.tab, Font = FONT_TITLE, TextSize = 14, TextColor3 = Theme.Accent,
-                    TextXAlignment = Enum.TextXAlignment.Right,
-                }, b)
-                b.MouseEnter:Connect(function() bs.Color = Theme.Accent end)
-                b.MouseLeave:Connect(function() bs.Color = Theme.Line end)
-                b.MouseButton1Click:Connect(function()
-                    SearchBox.Text = ""
-                    Select(e.tab)
-                end)
-                resultRows[#resultRows + 1] = b
-            end
-        end
-        if found == 0 then
-            resultRows[1] = make("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Text = "No results",
-                Font = FONT, TextSize = 12, TextColor3 = Theme.Dim, TextXAlignment = Enum.TextXAlignment.Left,
-                LayoutOrder = nextOrder(SearchPanel),
-            }, SearchPanel)
-        end
-    end
-    SearchBox:GetPropertyChangedSignal("Text"):Connect(runSearch)
-
-    local GRIP_ANGLE = -20
-    local MIN_W, MIN_H = 480, 320
-    local MAX_W, MAX_H = 900, 620
-
-    local Grip = make("TextButton", {
-        Name = "ResizeGrip", Size = UDim2.new(0, 30, 0, 30), AnchorPoint = Vector2.new(1, 1),
-        Position = UDim2.new(1, -2, 1, -2), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, ZIndex = 10,
-    }, MainFrame)
-    local gripLines = {}
-    do
-        local rad = math.rad(GRIP_ANGLE)
-        local nx, ny = -math.sin(rad), math.cos(rad)
-        local lengths = {16, 12, 8}
-        for i = 1, 3 do
-            local off = (i - 2) * 5
-            gripLines[i] = make("Frame", {
-                Size = UDim2.new(0, lengths[i], 0, 2), AnchorPoint = Vector2.new(0.5, 0.5),
-                Position = UDim2.new(0.5, 4 + nx * off, 0.5, 4 + ny * off), Rotation = GRIP_ANGLE,
-                BackgroundColor3 = Theme.Dim, BorderSizePixel = 0, ZIndex = 11,
-            }, Grip)
-            corner(gripLines[i], 1)
-        end
-    end
-    local function gripColor(c)
-        for _, l in ipairs(gripLines) do
-            TweenService:Create(l, TweenInfo.new(0.12), {BackgroundColor3 = c}):Play()
-        end
-    end
-
-    local resizing = false
-    local rStartInput, rStartW, rStartH, rStartPos
-    Grip.MouseEnter:Connect(function() if not resizing then gripColor(Theme.Accent) end end)
-    Grip.MouseLeave:Connect(function() if not resizing then gripColor(Theme.Dim) end end)
-    Grip.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            resizing = true
-            rStartInput = Vector2.new(input.Position.X, input.Position.Y)
-            rStartW, rStartH = MainFrame.Size.X.Offset, MainFrame.Size.Y.Offset
-            rStartPos = MainFrame.Position
-            gripColor(Theme.Accent)
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local s = uiScale.Scale
-            local d = (Vector2.new(input.Position.X, input.Position.Y) - rStartInput) / s
-            local cam2 = workspace.CurrentCamera
-            local v = cam2 and cam2.ViewportSize or Vector2.new(1280, 720)
-            local w = math.clamp(rStartW + d.X, MIN_W, math.max(MIN_W, math.min(MAX_W, (v.X - 12) / s)))
-            local h = math.clamp(rStartH + d.Y, MIN_H, math.max(MIN_H, math.min(MAX_H, (v.Y - 12) / s)))
-            MainFrame.Size = UDim2.new(0, w, 0, h)
-            MainFrame.Position = UDim2.new(
-                rStartPos.X.Scale, rStartPos.X.Offset + s * (w - rStartW) / 2,
-                rStartPos.Y.Scale, rStartPos.Y.Offset + s * (h - rStartH) / 2
-            )
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if resizing and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-            resizing = false
-            gripColor(Theme.Dim)
-        end
-    end)
-
-    local function AnimateOpen()
-        uiScale.Scale = baseScale * 0.94
-        TweenService:Create(uiScale, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Scale = baseScale,
-        }):Play()
-    end
-    MainButton.MouseButton1Click:Connect(function()
-        MainButton.Visible = false
-        MainFrame.Visible = true
-        AnimateOpen()
-    end)
-    CloseBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = false
-        MainButton.Visible = true
-    end)
-
-    Player.CharacterAdded:Connect(function(char)
-        local animate = char:WaitForChild("Animate", 5)
-        if animate and animSelected and animSelected.idle1 then
-            task.wait(0.2)
-            ApplyAnims(animSelected)
-        end
-    end)
-
-    local oldNamecall
-    if hookmetamethod and getnamecallmethod and checkcaller then
-        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-            local method = getnamecallmethod()
-            if not checkcaller() and getgenv().CKOhubxTargetPart then
-                if method == "Raycast" and self == workspace then
-                    local target = getgenv().CKOhubxTargetPart
-                    if target and target.Parent then
-                        local origin, direction, p3 = ...
-                        if typeof(direction) == "Vector3" and direction.Magnitude > 20 then
-                            local camOrigin = workspace.CurrentCamera.CFrame.Position
-                            if (origin - camOrigin).Magnitude >= 1 then
-                                local newDir = (target.Position - origin).Unit * 5000
-                                return oldNamecall(self, origin, newDir, p3)
-                            end
-                        end
-                    else
-                        getgenv().CKOhubxTargetPart = nil
+-- Hitbox loop
+task.spawn(function()
+    while task.wait(0.2) do
+        if not hitboxEnabled then continue end
+        local enLobby = false
+        pcall(function() enLobby = estaEnLobby() end)
+        if enLobby then continue end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= Player and isEnemy(plr) and plr.Character then
+                local character = plr.Character
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if rootPart and humanoid and humanoid.Health > 0 then
+                    local p = character:FindFirstChild("CKOhubxHB")
+                    if not p then
+                        p = Instance.new("Part")
+                        p.Name = "CKOhubxHB"
+                        p.Anchored = true
+                        p.CanCollide = false
+                        p.CanQuery = true
+                        p.CanTouch = false
+                        p.Massless = true
+                        p.Transparency = 1
+                        p.Material = Enum.Material.ForceField
+                        p.Parent = character
+                        customParts[plr] = p
                     end
+                    p.Size = Vector3.new(CustomHitboxSize, CustomHitboxSize, CustomHitboxSize)
+                    p.CFrame = rootPart.CFrame
                 end
             end
-            return oldNamecall(self, ...)
-        end)
+        end
+        for plr, part in pairs(customParts) do
+            if not plr.Parent or not plr.Character or not part or not part.Parent then
+                if part then pcall(function() part:Destroy() end) end
+                customParts[plr] = nil
+            end
+        end
     end
+end)
 
-    task.spawn(function()
-        local params = RaycastParams.new()
-        params.FilterType = Enum.RaycastFilterType.Exclude
-        while task.wait(0.1) do
-            if (autoShootEnabled or autoShootAgresivoEnabled) then
-                if estaEnLobby() then
-                    getgenv().CKOhubxTargetPart = nil
-                    continue
+-- ESP loop
+local activeESPs = {}
+task.spawn(function()
+    while task.wait(0.25) do
+        if not espEnabled then
+            for p, hl in pairs(activeESPs) do
+                pcall(function() hl:Destroy() end)
+                activeESPs[p] = nil
+            end
+            continue
+        end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= Player and isEnemy(p) and p.Character then
+                local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    local hl = activeESPs[p]
+                    if not hl or not hl.Parent then
+                        hl = Instance.new("Highlight")
+                        hl.Name = "CKOhubxESP"
+                        hl.FillTransparency = espGlow and 0.5 or 0.75
+                        hl.OutlineTransparency = 0
+                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        hl.Parent = p.Character
+                        activeESPs[p] = hl
+                    end
+                    hl.FillColor = espColor
+                    hl.OutlineColor = espColor
+                    hl.Adornee = p.Character
+                elseif activeESPs[p] then
+                    pcall(function() activeESPs[p]:Destroy() end)
+                    activeESPs[p] = nil
                 end
-                local char = Player.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") then
-                    getgenv().CKOhubxTargetPart = nil
-                    continue
-                end
-                local arma = char:FindFirstChildOfClass("Tool")
-                if not arma or not esPistola(arma) then
-                    getgenv().CKOhubxTargetPart = nil
-                    continue
-                end
-                local bestPart, bestDist = nil, math.huge
-                local myPos = char.HumanoidRootPart.Position
-                local headPos = char:FindFirstChild("Head") and char.Head.Position or myPos
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= Player and isEnemy(p) then
-                        local ec = p.Character
-                        if ec then
-                            local eHum = ec:FindFirstChildOfClass("Humanoid")
-                            if eHum and eHum.Health > 0 then
-                                params.FilterDescendantsInstances = { char, ec }
-                                local function try(part)
-                                    if not part or not part:IsA("BasePart") then return end
-                                    local d = (part.Position - myPos).Magnitude
-                                    if d < bestDist then
-                                        local dir = (part.Position - headPos)
-                                        if not workspace:Raycast(headPos, dir, params) then
-                                            bestDist = d
-                                            bestPart = part
-                                        end
-                                    end
-                                end
-                                if autoShootAgresivoEnabled then
-                                    for _, part in ipairs(ec:GetChildren()) do
-                                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then try(part) end
-                                    end
-                                else
-                                    if autoShootTargetPart == "Cabeza" then
-                                        try(ec:FindFirstChild("Head"))
-                                    elseif autoShootTargetPart == "Torso" then
-                                        try(ec:FindFirstChild("UpperTorso"))
-                                        try(ec:FindFirstChild("Torso"))
-                                        try(ec:FindFirstChild("HumanoidRootPart"))
-                                    else
-                                        for _, part in ipairs(ec:GetChildren()) do
-                                            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then try(part) end
-                                        end
-                                    end
-                                end
-                            end
+            elseif activeESPs[p] then
+                pcall(function() activeESPs[p]:Destroy() end)
+                activeESPs[p] = nil
+            end
+        end
+    end
+end)
+
+
+local oldNamecall
+if hookmetamethod and getnamecallmethod and checkcaller then
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        if not checkcaller() and getgenv().CKOhubxTargetPart then
+            if method == "Raycast" and self == workspace then
+                local target = getgenv().CKOhubxTargetPart
+                if target and target.Parent then
+                    local origin, direction, p3 = ...
+                    if typeof(direction) == "Vector3" and direction.Magnitude > 20 then
+                        local camOrigin = workspace.CurrentCamera.CFrame.Position
+                        if (origin - camOrigin).Magnitude >= 1 then
+                            local newDir = (target.Position - origin).Unit * 5000
+                            return oldNamecall(self, origin, newDir, p3)
                         end
                     end
-                end
-                if bestPart then
-                    getgenv().CKOhubxTargetPart = bestPart
-                    pcall(function()
-                        arma:Activate()
-                        task.delay(0.05, function() if arma.Parent == char then arma:Deactivate() end end)
-                    end)
-                    task.wait(0.15)
                 else
                     getgenv().CKOhubxTargetPart = nil
                 end
             end
         end
-    end)
-
-    task.spawn(function()
-        local params = RaycastParams.new()
-        params.FilterType = Enum.RaycastFilterType.Exclude
-        while task.wait(0.1) do
-            if (silentAimManualEnabled or silentAimFovEnabled) then
-                if estaEnLobby() then
-                    if not autoShootEnabled and not autoShootAgresivoEnabled then
-                        getgenv().CKOhubxTargetPart = nil
-                    end
-                    continue
-                end
-                local char = Player.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
-                local bestPart, bestDistCenter, bestDistFis = nil, math.huge, math.huge
-                local myPos = char.HumanoidRootPart.Position
-                local headPos = char:FindFirstChild("Head") and char.Head.Position or myPos
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= Player and isEnemy(p) then
-                        local ec = p.Character
-                        if ec then
-                            local eHum = ec:FindFirstChildOfClass("Humanoid")
-                            if eHum and eHum.Health > 0 then
-                                local parts = {}
-                                if silentAimTargetPart == "Cabeza" then
-                                    local h = ec:FindFirstChild("Head")
-                                    if h then table.insert(parts, h) end
-                                elseif silentAimTargetPart == "Torso" then
-                                    for _, n in ipairs({"UpperTorso","Torso","HumanoidRootPart"}) do
-                                        local pp = ec:FindFirstChild(n)
-                                        if pp then table.insert(parts, pp) end
-                                    end
-                                else
-                                    for _, part in ipairs(ec:GetChildren()) do
-                                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then table.insert(parts, part) end
-                                    end
-                                end
-                                params.FilterDescendantsInstances = { char, ec }
-                                for _, part in ipairs(parts) do
-                                    local distFis = (part.Position - myPos).Magnitude
-                                    local pos2D, onScreen = workspace.CurrentCamera:WorldToViewportPoint(part.Position)
-                                    local distCenter = (Vector2.new(pos2D.X, pos2D.Y) - Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)).Magnitude
-                                    local pass = false
-                                    if silentAimFovEnabled and onScreen and distCenter <= fovRadius and distCenter < bestDistCenter then
-                                        pass = true
-                                    elseif silentAimManualEnabled and distFis < bestDistFis then
-                                        pass = true
-                                    end
-                                    if pass then
-                                        if not workspace:Raycast(headPos, part.Position - headPos, params) then
-                                            if silentAimFovEnabled then bestDistCenter = distCenter else bestDistFis = distFis end
-                                            bestPart = part
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-                if bestPart then
-                    getgenv().CKOhubxTargetPart = bestPart
-                else
-                    if not autoShootEnabled and not autoShootAgresivoEnabled then
-                        getgenv().CKOhubxTargetPart = nil
-                    end
-                end
-            end
-        end
-    end)
-
-    local FOVCircle = nil
-    if Drawing then
-        FOVCircle = Drawing.new("Circle")
-        FOVCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
-        FOVCircle.Radius = fovRadius
-        FOVCircle.Filled = false
-        FOVCircle.Color = Color3.fromRGB(255, 255, 255)
-        FOVCircle.Visible = false
-        FOVCircle.Thickness = 1
-    end
-
-    RunService.RenderStepped:Connect(function()
-        if fovVisiblePreference and FOVCircle then
-            FOVCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
-            FOVCircle.Radius = fovRadius
-            FOVCircle.Visible = true
-            FOVCircle.Color = (silentAimFovEnabled and getgenv().CKOhubxTargetPart) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,255,255)
-        elseif FOVCircle then
-            FOVCircle.Visible = false
-        end
+        return oldNamecall(self, ...)
     end)
 end
 
-LoadHub()
+task.spawn(function()
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    while task.wait(0.1) do
+        if (autoShootEnabled or autoShootAgresivoEnabled) then
+            if estaEnLobby() then
+                getgenv().CKOhubxTargetPart = nil
+                continue
+            end
+            local char = Player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then
+                getgenv().CKOhubxTargetPart = nil
+                continue
+            end
+            local arma = char:FindFirstChildOfClass("Tool")
+            if not arma or not esPistola(arma) then
+                getgenv().CKOhubxTargetPart = nil
+                continue
+            end
+            local bestPart, bestDist = nil, math.huge
+            local myPos = char.HumanoidRootPart.Position
+            local headPos = char:FindFirstChild("Head") and char.Head.Position or myPos
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= Player and isEnemy(p) then
+                    local ec = p.Character
+                    if ec then
+                        local eHum = ec:FindFirstChildOfClass("Humanoid")
+                        if eHum and eHum.Health > 0 then
+                            params.FilterDescendantsInstances = { char, ec }
+                            local function try(part)
+                                if not part or not part:IsA("BasePart") then return end
+                                local d = (part.Position - myPos).Magnitude
+                                if d < bestDist then
+                                    local dir = (part.Position - headPos)
+                                    if not workspace:Raycast(headPos, dir, params) then
+                                        bestDist = d
+                                        bestPart = part
+                                    end
+                                end
+                            end
+                            if autoShootAgresivoEnabled then
+                                for _, part in ipairs(ec:GetChildren()) do
+                                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then try(part) end
+                                end
+                            else
+                                if autoShootTargetPart == "Cabeza" then
+                                    try(ec:FindFirstChild("Head"))
+                                elseif autoShootTargetPart == "Torso" then
+                                    try(ec:FindFirstChild("UpperTorso"))
+                                    try(ec:FindFirstChild("Torso"))
+                                    try(ec:FindFirstChild("HumanoidRootPart"))
+                                else
+                                    for _, part in ipairs(ec:GetChildren()) do
+                                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then try(part) end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            if bestPart then
+                getgenv().CKOhubxTargetPart = bestPart
+                pcall(function()
+                    arma:Activate()
+                    task.delay(0.05, function() if arma.Parent == char then arma:Deactivate() end end)
+                end)
+                task.wait(0.15)
+            else
+                getgenv().CKOhubxTargetPart = nil
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    while task.wait(0.1) do
+        if (silentAimManualEnabled or silentAimFovEnabled) then
+            if estaEnLobby() then
+                if not autoShootEnabled and not autoShootAgresivoEnabled then
+                    getgenv().CKOhubxTargetPart = nil
+                end
+                continue
+            end
+            local char = Player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+            local bestPart, bestDistCenter, bestDistFis = nil, math.huge, math.huge
+            local myPos = char.HumanoidRootPart.Position
+            local headPos = char:FindFirstChild("Head") and char.Head.Position or myPos
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= Player and isEnemy(p) then
+                    local ec = p.Character
+                    if ec then
+                        local eHum = ec:FindFirstChildOfClass("Humanoid")
+                        if eHum and eHum.Health > 0 then
+                            local parts = {}
+                            if silentAimTargetPart == "Cabeza" then
+                                local h = ec:FindFirstChild("Head")
+                                if h then table.insert(parts, h) end
+                            elseif silentAimTargetPart == "Torso" then
+                                for _, n in ipairs({"UpperTorso","Torso","HumanoidRootPart"}) do
+                                    local pp = ec:FindFirstChild(n)
+                                    if pp then table.insert(parts, pp) end
+                                end
+                            else
+                                for _, part in ipairs(ec:GetChildren()) do
+                                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then table.insert(parts, part) end
+                                end
+                            end
+                            params.FilterDescendantsInstances = { char, ec }
+                            for _, part in ipairs(parts) do
+                                local distFis = (part.Position - myPos).Magnitude
+                                local pos2D, onScreen = workspace.CurrentCamera:WorldToViewportPoint(part.Position)
+                                local distCenter = (Vector2.new(pos2D.X, pos2D.Y) - Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)).Magnitude
+                                local pass = false
+                                if silentAimFovEnabled and onScreen and distCenter <= fovRadius and distCenter < bestDistCenter then
+                                    pass = true
+                                elseif silentAimManualEnabled and distFis < bestDistFis then
+                                    pass = true
+                                end
+                                if pass then
+                                    if not workspace:Raycast(headPos, part.Position - headPos, params) then
+                                        if silentAimFovEnabled then bestDistCenter = distCenter else bestDistFis = distFis end
+                                        bestPart = part
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            if bestPart then
+                getgenv().CKOhubxTargetPart = bestPart
+            else
+                if not autoShootEnabled and not autoShootAgresivoEnabled then
+                    getgenv().CKOhubxTargetPart = nil
+                end
+            end
+        end
+    end
+end)
+
+local FOVCircle = nil
+if Drawing then
+    FOVCircle = Drawing.new("Circle")
+    FOVCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
+    FOVCircle.Radius = fovRadius
+    FOVCircle.Filled = false
+    FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+    FOVCircle.Visible = false
+    FOVCircle.Thickness = 1
+end
+
+RunService.RenderStepped:Connect(function()
+    if fovVisiblePreference and FOVCircle then
+        FOVCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
+        FOVCircle.Radius = fovRadius
+        FOVCircle.Visible = true
+        FOVCircle.Color = (silentAimFovEnabled and getgenv().CKOhubxTargetPart) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,255,255)
+    elseif FOVCircle then
+        FOVCircle.Visible = false
+    end
+end)
